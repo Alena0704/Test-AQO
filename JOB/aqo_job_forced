@@ -1,0 +1,65 @@
+INSTDIR=/home/a.rybakina/postgrespro/tmp_install/bin
+QUERY_DIR=/home/a.rybakina/jo-bench
+#QUERY_DIR_TEST=/home/alena/job_analyze1/source/queries
+iter_job=26
+learn_iters=50
+disabled_iters=10
+control_iters=25
+
+#rm -rf /home/a.rybakina/jo-bench/frozen_folder
+bash $QUERY_DIR/setup_forced_settings.sh
+
+# Enable all previously executed queries which could be disabled
+$INSTDIR/psql -d postgres -c "
+  SELECT count(*) FROM aqo_queries, LATERAL aqo_enable_class(queryid)
+  WHERE queryid <> 0
+"
+filenum=1
+mode='frozen'
+folder_output=$(echo "/home/a.rybakina/jo-bench/aqo/${mode}_folder${iter_job}")
+#rm -r $folder_output
+mkdir $folder_output
+cp $QUERY_DIR/setup_forced_settings.sh $folder_output/setup_forced_settings.sh
+
+for (( i=4; i<control_iters; i++ ))
+do
+  file_output=$folder_output/$(echo "${mode}_${i}_report.csv")
+  echo -e "Query Number,Query Name,Execution Time,Plan time,Query hash" > $file_output
+  echo $i >> $folder_output/explains.txt
+  for file in $QUERY_DIR/queries/*.sql
+  do
+    short_file=$(basename "$file")
+    echo -n "EXPLAIN (ANALYZE, VERBOSE, FORMAT JSON) " > test.sql
+    cat $file >> test.sql
+    result=$($INSTDIR/psql -d postgres -f test.sql)
+    query_hash=$(echo $result | grep -Eo '"Query Identifier": [+-]?[0-9]*' | grep -Eo '[+-]?[0-9]*')
+    exec_time=$(echo $result | sed -n 's/.*"Execution Time": \([0-9]*\.[0-9]*\).*/\1/p')
+    plan_time=$(echo $result | sed -n 's/.*"Planning Time": \([0-9]*\.[0-9]*\).*/\1/p')
+
+    echo -n "EXPLAIN " > test.sql
+    cat $file >> test.sql
+    result=$($INSTDIR/psql -d postgres -f test.sql)
+    cat $file >> $folder_output/explains.txt
+    echo -e $result >> $folder_output/explains.txt
+
+    echo -e "$i,$short_file,$exec_time,$plan_time,$query_hash" >> $file_output
+    echo -e "$i,$short_file,$exec_time,$plan_time,$query_hash"
+  done
+#if [$iter%24==0] then
+#$INSTDIR/psql -d postgres -c "\copy (select * from aqo_query_stat) to '${folder_output}/${mode}_aqo_query_stat${iter_job}.csv' DELIMITER ',' CSV HEADER"
+#endif
+filenum=$((filenum+1))
+done
+
+$INSTDIR/psql -d postgres -c "SELECT sum(error) AS total_error FROM aqo_cardinality_error(false)"
+$INSTDIR/psql -d postgres -c "SELECT sum(error) AS total_error_aqo FROM aqo_cardinality_error(true)"
+
+err_output=${folder_output}/$(echo "/${mode}_aqo_query_err.csv")
+
+$INSTDIR/psql -d postgres -c "\copy (SELECT id, (o.error - c.error) AS errdelta
+  FROM aqo_cardinality_error(true) c JOIN aqo_cardinality_error(false) o
+  USING (id)) to '${err_output}' DELIMITER ',' CSV HEADER"
+$INSTDIR/psql -d postgres -c "\copy (select * from aqo_query_stat
+
+) to '${folder_output}/${mode}_aqo_query_stat.csv' DELIMITER ',' CSV HEADER"
+$INSTDIR/psql -d postgres -c "\copy (select * from aqo_data) to '${folder_output}/${mode}_aqo_data.csv' DELIMITER ',' CSV HEADER"
