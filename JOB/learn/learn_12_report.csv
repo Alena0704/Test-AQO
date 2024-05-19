@@ -1,4 +1,4 @@
-,query_number,query_name,execution_time,plan_time,query_hash
+Query Number,Query Name,Execution Time,Plan time,Query hash
 678,12,10a.sql,518.119,31.339,-4409698924550295459
 679,12,10b.sql,216.542,28.375,2327673058233797615
 680,12,10c.sql,25472.29,23.1,8860988427713565746

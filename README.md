@@ -278,21 +278,217 @@ max_parallel_workers_per_gather = 1
 max_parallel_maintenance_workers = 1
 ```
 
-You can see my test results in JOB folder for three modes: disabled, frozen and learn. Files like "1_report.csv" or "frozen_1_report.csv" ("learn_1_report") contain execution, planning time and query hash of queries. Files like "setup_learn_settings.sh" contain settings that I applyed on every stage of AQO testing. Files aqo_job_disabled, aqo_job_forced and aqo_job_learn consist of test script that I described before. You should pay attention on paths set in script, particulary the values of variables enumerated bellow:
+You can see my test results in JOB folder for three modes: disabled, frozen and learn. Files like "1_report.csv" or "frozen_1_report.csv" ("learn_1_report") contain execution, planning time and query hash of queries. Files like "setup_learn_settings.sh" contain settings that I applyed on every stage of AQO testing. Files aqo_job_disabled, aqo_job_forced and aqo_job_learn consist of test script that I described before.
+
+You should pay attention on paths set in script, particulary the values of variables enumerated bellow:
 INSTDIR - the path where install folder with "bin" is located
 QUERY_DIR - the path where JOB queries are
 folder_output - the catalog where you store test results.
 
 ## How analyze AQO test
 To compare statistic of working planner with and without AQO, first of all, you should consider an error of cardinality on every iteration of learning.
-To be noted, an cardinality error will be descreassing only for learning process, in disabled and controlled it will change slightly.
+To be noted, an cardinality error will be descreassing only for learning process, in disabled and controlled it will be changing slightly.
 If query are learnable, an error will be dropping and in the last itration it will even reach 0.
 In learning mode, planning and execution time might be unstable because planner tries to generate new optimal plan again after using new information about cardinality.
 
-The graphics [there](https://github.com/Alena0704/Test-AQO/blob/main/25_learn_Difference%20cardinality.html) show how an error of cardinality is falling during 22 iteration when queries were learning.
+The graphics [there](https://github.com/Alena0704/Test-AQO/blob/main/Cardinality%20error.html) show how an error of cardinality is falling during 22 iteration when queries were learning.
+
+As I mentioned before, during learning, planner will probably regenerate the plan of execution query, so planning time will be more.
+
+See the picture with the planning and execution time for every query [there](https://github.com/Alena0704/Test-AQO/blob/main/Execution%20and%20planning%20time%20during%20learning%20AQO.html)
 
 The next thing, that you should consider is time of execution query. If with AQO planner built better plan than it was, the execution time must be less.
 
+See the difference between execution time with and without used AQO for every query [there](https://github.com/Alena0704/Test-AQO/blob/main/Execution%20Time%20between%20with%20and%20without%20AQO.html)
+
+I used analytic information from aqo_query_stats copied the results within query:
+```
+psql -d postgres -c "\copy (select * from aqo_query_stat) to 'aqo_query_stat.csv' DELIMITER ',' CSV HEADER"
+```
+So, after preprocessing (I used code bellow and my owned functions), I got the presentative view of data for analysis:
+```
+import functions
+from preprocess_dataframe import get_preprocess_dataframe
+
+df_query_stat=pd.read_csv('/home/alena/Test-AQO/JOB/disabled/aqo_query_stat.csv')
+    lst_stat_columns = ['execution_time_with_aqo', 'execution_time_without_aqo',
+       'planning_time_with_aqo', 'planning_time_without_aqo',
+       'cardinality_error_with_aqo', 'cardinality_error_without_aqo']
+lst_stat_cut = [1, 1, 1, 1, 1, 1]
+df_query_stat = get_preprocess_dataframe(df_query_stat, lst_stat_columns, lst_stat_cut)
+```
+I got the table looking like that:
+<img alt="aqo_query_stats" src="some pictures/aqo_query_stats.png" />
+
+For processing files with analytical information (like learn_1_report.csv) and file with cardinality error (like I use learn_aqo_query_err_1.csv) I used script bellow:
+```
+df_ex_pl_time = pd.DataFrame()
+df_ex_pl_time_orig = pd.DataFrame()
+df_query_err=pd.DataFrame()
+
+filename_basics=glob.glob("{}/*_report.csv".format(path_folder, mode))
+
+for file in filename_basics:
+    df_list = list(pd.read_csv(file) for file in filename_basics)
+    if len(df_list)>1:
+        df_list = []
+        for file in filename_basics:
+            df=pd.read_csv(file)
+            df['Query hash'] = df['Query hash'].astype(str)
+            df_list.append(df)
+        df_ex_pl_time = pd.concat(df_list, ignore_index=True)
+    else:
+        df_ex_pl_time = df_list[0]
+
+#report
+df_ex_pl_time = df_ex_pl_time.fillna(0)
+df_ex_pl_time = df_ex_pl_time.rename(columns = {'Plan time': 'plan_time',
+                                        'Query Number':'query_number',
+                                        'Query Name':'query_name',
+                                        'Execution Time':'execution_time',
+                                        'Query hash':'query_hash'})
+df_ex_pl_time['query_hash'] = df_ex_pl_time['query_hash'].astype(str)
+df_ex_pl_time['plan_time'] = df_ex_pl_time['plan_time'].astype(float)
+df_ex_pl_time_orig=df_ex_pl_time.copy()
 
 
-As I mentioned before, during learning, planner will probably regenerate the plan of execution query, so planning time will be more.
+filename_basics=glob.glob("{}/*_err*.csv".format(path_folder, mode))
+lst=[]
+df_list=[]
+def f(lst,k,l):
+    lst_temp=[k]*l
+    lst = lst+lst_temp
+df_list = list(pd.read_csv(file) for file in filename_basics)
+if len(df_list)>1:
+    df_query_err = pd.concat(df_list, ignore_index=True)
+else:
+    df_query_err = df_list[0]
+df_query_err['id'] = df_query_err['id'].astype(str)
+df_query_err['errdelta'] = df_query_err['errdelta'].astype(float)
+```
+
+To assign what query names are determinated to query hash I used script:
+```
+dict_hash = {}
+for i in df_ex_pl_time.itertuples(index=False):
+    if i.query_hash in dict_hash:
+        dict_hash[str(i.query_hash)].append(i.query_name)
+    else:
+        dict_hash[i.query_hash] = []
+        dict_hash[str(i.query_hash)].append(i.query_name)
+df_temp=pd.DataFrame(dict_hash.items())
+df_temp.columns=['queryid', 'query_name']
+df_temp['queryid'] = df_temp['queryid'].astype(str)
+#print(df_query_stat.columns)
+df_query_err=df_query_err.merge(df_temp,left_on='id', right_on='queryid')
+df_query_err['query_name'] = df_query_err['query_name'].astype(str)
+df_query_err=df_query_err.drop(columns=['queryid'])
+df_query_stat['queryid'] = df_query_stat['queryid'].astype(int)
+df_query_stat=df_query_stat.merge(df_temp, how='left', on='queryid')
+```
+
+Note, you need to collect information from explained queries to realize it.
+
+Code for drawing graphics mentioned before:
+```
+fig = make_subplots(rows=11, cols=11, subplot_titles=name_query)
+for it, i in enumerate(name_query):
+    df_temp=learn_df_query_err[learn_df_query_err['query_name']==name_query[it]]
+    df_temp2=stats[stats['query_name']==name_query[it]]['cardinality_error_without_aqo_split'].to_list()
+    if len(df_temp2)==0:
+        fig.add_trace(go.Scatter(name='cardinality_error', x = ox,
+                         y = [2]*22, line = dict(color= 'black', dash='dash')),
+              row=(it//11)+1, col=(it%11)+1)
+    else:
+        fig.add_trace(go.Scatter(name='cardinality_error', x = ox,
+                         y = [df_temp2[0][0]]*22, line = dict(color= 'black', dash='dash')),
+              row=(it//11)+1, col=(it%11)+1)
+    fig.add_trace(go.Scatter(name='cardinality_error', x = ox,
+                         y = df_temp['errdelta_learn'].to_list()[:22], line = dict(color= 'red', dash='dot')),
+              row=(it//11)+1, col=(it%11)+1)
+    fig.update_layout(legend_orientation="h",
+                  legend=dict(x=.5, xanchor="center"),
+                   title_text="Error of cardinality")
+    fig.update_xaxes(title_text="Iterations", row=(it//11)+1, col=(it%11)+1)
+    fig.update_yaxes(title_text="Cardinality Error", row=(it//11)+1, col=(it%11)+1)
+fig.update_layout(width=4000, height = 4200)
+upload_pics(fig, '{}/{}_folder{}'.format(main_path, 'learn',cycle_test), 'Difference cardinality')
+os.rename('temp-plot.html', '{}_learn_Difference cardinality.html'.format(cycle_test))
+fig.show()
+```
+
+So, the benefits of using AQO under withut it you can see [there](https://github.com/Alena0704/Test-AQO/blob/main/final_graphic_exec_time_diff.html) or below:
+
+<img alt="The difference between Execution time with and without AQO" src="some pictures/benefits from AQO1.png" />
+
+The code to make the graphic:
+```
+stackData = {
+    "last execution time with aqo":lst_execution_time_with_aqo,
+    "last execution time without aqo": lst_execution_time_without_aqo,
+    # Use differece
+    "labels": name_query2
+}
+
+
+fig3 = go.Figure(
+    data=[
+        go.Bar(
+            name="frozen execution time",
+            x=stackData["labels"],
+            y=stackData["last execution time with aqo"],
+            offsetgroup=0,
+            marker_color = '#800080'
+        ),
+        go.Bar(
+            name="disabled execution time",
+            x=stackData["labels"],
+            y=stackData["last execution time without aqo"],
+            offsetgroup=1,
+            marker_color = '#ff4d00'
+        )
+    ],
+    layout=go.Layout(
+        title="Execution time with and without AQO",
+        yaxis_title="Execution time",
+        xaxis_title="queries",
+        width=1400, height = 800, font=dict(
+        family="Courier New, monospace",
+        size=16,
+        color="RebeccaPurple"
+    ),
+        yaxis=dict(range=[0, 20]),
+                 legend=dict(
+    orientation = 'h', xanchor = "center", x = 0.5, y= 1)
+    )
+)
+upload_pics(fig3, '{}/{}_folder{}'.format(main_path, 'learn',cycle_test), 'Stack')
+fig3.show()
+```
+
+Evaluate the benefits as the ratio Execution time of query without AQO by Execution time with it:
+<img alt="The ratio between execution time without and with using AQO" src="some pictures/benefits from AQO2.png" />
+
+Code to build it:
+```
+fig3 = go.Figure(
+    data=[
+        go.Scatter(name = 'Relative execution time', x = name_query2, y= [(b) / (m)-1 for b,m in zip(lst_execution_time_without_aqo, lst_execution_time_with_aqo)], line = dict(color= 'black', dash='solid')),
+        go.Scatter(name = 'No better no worse (1)', x = name_query2, y= [1]*len(name_query2), line = dict(color= 'red', dash='dash')),
+        go.Scatter(name = 'Better in 4 times (4)', x = name_query2, y= [4]*len(name_query2), line = dict(color= 'red', dash='dash')),
+    go.Scatter(name = 'Worse (0)', x = name_query2, y= [0.01]*len(name_query2), line = dict(color = '#800080', dash='dash'))],
+layout=go.Layout(
+        title="The ratio between execution time without and with using AQO",
+        yaxis_title="Relative execution time",
+        xaxis_title="queries",
+        width=1400, height = 800, font=dict(
+        family="Courier New, monospace",
+        size=16,
+        color="Black"),
+    yaxis=dict(range=[-1, 10]),legend=dict(orientation = 'h', xanchor = "center", x = 0.5, y= 1)
+    ),
+)
+fig3.update_traces(texttemplate='%{text:.2s}', textposition='top center')
+upload_pics(fig3, '{}/{}_folder{}'.format(main_path, 'learn',cycle_test), 'Stack')
+fig3.show()
+```
