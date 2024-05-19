@@ -289,8 +289,10 @@ To be noted, an cardinality error will be descreassing only for learning process
 If query are learnable, an error will be dropping and in the last itration it will even reach 0.
 In learning mode, planning and execution time might be unstable because planner tries to generate new optimal plan again after using new information about cardinality.
 
-The graphics [there](25_learn_Difference cardinality.html) show how an error of cardinality is falling during 22 iteration when queries were learning.
+The graphics [there](https://github.com/Alena0704/Test-AQO/blob/main/25_learn_Difference%20cardinality.html) show how an error of cardinality is falling during 22 iteration when queries were learning.
 
 The next thing, that you should consider is time of execution query. If with AQO planner built better plan than it was, the execution time must be less.
 
-As I mebtioned before, during learning, planner will probablt regenerate the plan of execution query, so planning time will be more for this reason.
+
+
+As I mentioned before, during learning, planner will probably regenerate the plan of execution query, so planning time will be more.
