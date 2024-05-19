@@ -149,7 +149,7 @@ end;
 $$ language plpgsql;
 
 select random_cno(5000, 0);
---select random_cno(1000, 1);
+select random_cno(10000, 1);
 select count(*) from score;
 CREATE INDEX SCORE_IDX1 ON SCORE(sno, cno);
 --CREATE INDEX COURSE_IDX1 ON course(cno, module);
