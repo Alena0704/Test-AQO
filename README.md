@@ -24,7 +24,7 @@ To know about [AQO](https://github.com/postgrespro/aqo) you can read articles, d
 - [AQO documentation](https://postgrespro.ru/docs/postgrespro/16/aqo?lang=en)
 - [Oleg Ivanov, Sergey Bartunov :Adaptive Cardinality Estimation](https://arxiv.org/pdf/1711.08330)
 - [Oleg Ivanov: Adaptive query optimization in PostgreSQL](https://www.pgcon.org/2017/schedule/attachments/450_pgcon2017_aqo.pdf)
-- [Oleg Ivanov, Yerzhaisang Taskali](https://archive.fosdem.org/2021/schedule/event/postgres_query_optimization/)
+- [Oleg Ivanov, Yerzhaisang Taskali: Adaptive query optimization in PostgreSQL](https://archive.fosdem.org/2021/schedule/event/postgres_query_optimization/)
 
 These links about AQO in Russia:
 - [Павел Толмачев: AQO — адаптивная оптимизация запросов в PostgreSQL](https://habr.com/ru/companies/postgrespro/articles/508766/)
@@ -86,7 +86,8 @@ To do it I prepared csv file with collected all important information about stud
 ```
 psql -d postgres -c "\copy (select degree, essay_text_len, clevel, gen, sgroup, test_preparation from student, course, score where score.cno = course.cno and student.sno = score.sno) to '/home/alena/score.csv' DELIMITER ',' CSV HEADER"
 ```
-After that I ran pandas profilling to analyse data. There are analytical results:
+After that I ran pandas profilling to analyse data. There are analytical results.
+Breaf analytical information:
 <img alt="Breaf analytical information" src="some pictures/breaf information.png" />
 As you see on the picture above I had 30000 data at all and 4800 among of them was dublicate.
 
@@ -100,35 +101,46 @@ Degree column has nonuniform distribution, where we have a lot of values between
 <img alt="Distribution of degree column" src="some pictures/degree.png" />
 There are some more statistical information about this column (MCV):
 <img alt="Statistic info about degree column" src="some pictures/degree_statistics.png" />
+MCV statistics of degree column:
 <img alt="MCV statistics of degree column" src="some pictures/degree_mcv.png" />
+Extreme MCV statistics of degree column:
 <img alt="Extreme MCV statistics of degree column" src="some pictures/degree_extrem_mcv.png" />
 <img alt="Extreme MCV statistics of degree column" src="some pictures/degree_extrem_mcv1.png" />
 
 The most interesting distribution of this column by groups:
+Degree distribution for Group A:
 <img alt="Degree distribution for Group A" src="some pictures/degree_groupA.png" />
+Degree distribution for Group B:
 <img alt="Degree distribution for Group B" src="some pictures/degree_groupB.png" />
+Degree distribution for Group C:
 <img alt="Degree distribution for Group C" src="some pictures/degree_groupC.png" />
+Degree distribution for Group D:
 <img alt="Degree distribution for Group D" src="some pictures/degree_groupD.png" />
+Degree distribution for Group E:
 <img alt="Degree distribution for Group E" src="some pictures/degree_groupE.png" />
 
 ### The length of letters of essay (essay_text_len column)
 It also have nonuniform distribution, where we have a lot of students who didn't write essay.
 <img alt="Distribution of essay_text_len column" src="some pictures/essay_text_len.png" />
 There are some more statistical information about this column (MCV):
+Statistic info about essay_text_len column:
 <img alt="Statistic info about essay_text_len column" src="some pictures/essay_text_len_statistics.png" />
+MCV statistics of essay_text_len column:
 <img alt="MCV statistics of essay_text_len column" src="some pictures/essay_text_len_mcv.png" />
+Extreme MCV statistics of essay_text_len column:
 <img alt="Extreme MCV statistics of essay_text_len column" src="some pictures/essay_text_len_extreme_mcv.png" />
 <img alt="Extreme MCV statistics of essay_text_len column" src="some pictures/essay_text_len_extreme_mcv1.png" />
 
 It looks exciting to observe the distribution of the number of letters in the essay for some groups:
+Distribution of number of letter of essay for Group E:
 <img alt="Distribution of number of letter of essay for Group E" src="some pictures/len_text_groupE.png" />
-
+Distribution of number of letter of essay for Group D:
 <img alt="Distribution of number of letter of essay for Group D" src="some pictures/len_text_groupD.png" />
-
+Distribution of number of letter of essay for Group C:
 <img alt="Distribution of number of letter of essay for Group C" src="some pictures/len_text_groupC.png" />
-
+Distribution of number of letter of essay for Group B:
 <img alt="Distribution of number of letter of essay for Group B" src="some pictures/len_text_groupB.png" />
-
+Distribution of number of letter of essay for Group A:
 <img alt="Distribution of number of letter of essay for Group A" src="some pictures/len_text_groupA.png" />
 
 ### The mark about having preparation course students before taking exam
@@ -180,6 +192,7 @@ All script analysis is in database_analyzes.ipynb
 ## Interesting query issue
 
 # AQO tests on JOB database
+
 ## How to prepare database
 This repository is a fork of the [project](https://github.com/gregrahn/join-order-benchmark). Here we unite queries and data in one place. Main goal of this repository is simplifying of the deploy process.
 
@@ -202,7 +215,7 @@ Please note that you should specify the absolute path to the data files when usi
 
 ## How to test the AQO
 ### disabled mode
-To test AQO with JOB you should gather statistics with disabled mode. To do it you should adjust your database applying gucs:
+To test AQO with JOB you should gather statistics with (disabled)[https://postgrespro.ru/docs/postgrespro/14/aqo#AQO-CONFIGURATION] mode. To do it you should adjust your database applying gucs:
 ```
 aqo.mode = 'disabled'
 aqo.force_collect_stat = 'on'
@@ -238,7 +251,7 @@ done
 psql -d postgres -c "\copy (select * from aqo_query_stat) to '${mode}_aqo_query_stat.csv' DELIMITER ',' CSV HEADER"
 ```
 ### learn mode
-What you should do to learn queries on JOB database is to change GUC's mode to learn and repeat the script above. During learning, you should disabled parallel workers to better and speed up the results of learning.
+What you should do to [learn](https://postgrespro.ru/docs/postgrespro/14/aqo#AQO-CONFIGURATION) queries on JOB database is to change GUC's mode to learn and repeat the script above. During learning, you should disabled parallel workers to better and speed up the results of learning.
 I applyed such gucs:
 ```
 min_parallel_table_scan_size = 1
@@ -253,7 +266,7 @@ In addition, you can see an error cardinality after every learning iteration and
 psql -d postgres -c "SELECT error AS error_aqo FROM aqo_cardinality_error(true)"
 ```
 ### controlled mode
-Last stage is running AQO in controlled or frozen mode. The main difference between them is collect new queries or not to AQO data to learn it. For known queiries planner uses cardinality information stored in AQO. I applyed GUC:
+Last stage is running AQO in [controlled](https://postgrespro.ru/docs/postgrespro/14/aqo#AQO-CONFIGURATION) or frozen mode. The main difference between them is collect new queries or not to AQO data to learn it. For known queiries planner uses cardinality information stored in AQO. I applyed GUC:
 ```
 aqo.mode = 'controlled'
 ```
