@@ -16,7 +16,7 @@
 
 
 # What AQO is
-## Description and you can find it
+## Description and you sources
 Adaptive query optimization is the extension of standard PostgreSQL cost-based query optimizer. Its basic principle is to use query execution statistics for improving cardinality estimation. Experimental evaluation shows that this improvement sometimes provides an enormously large speed-up for rather complicated queries.
 The installation of [AQO](https://github.com/postgrespro/aqo) is described [there](https://github.com/postgrespro/aqo).
 ## Extra links about AQO
