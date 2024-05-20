@@ -18,15 +18,15 @@
 # What AQO is
 ## Description and you sources
 Adaptive query optimization is the extension of standard PostgreSQL cost-based query optimizer. Its basic principle is to use query execution statistics for improving cardinality estimation. Experimental evaluation shows that this improvement sometimes provides optimal perfomance.
-The installation of [AQO](https://github.com/postgrespro/aqo) is described [there](https://github.com/postgrespro/aqo).
+The installation of [AQO](https://github.com/postgrespro/aqo) is described [here](https://github.com/postgrespro/aqo).
 ## Extra links about AQO
-To know about [AQO](https://github.com/postgrespro/aqo) you can read articles, documentation and see presentations from these sources:
+To know about [AQO](https://github.com/postgrespro/aqo), you can read articles, documentation and see presentations from these sources:
 - [AQO documentation](https://postgrespro.ru/docs/postgrespro/16/aqo?lang=en)
 - [Oleg Ivanov, Sergey Bartunov :Adaptive Cardinality Estimation](https://arxiv.org/pdf/1711.08330)
 - [Oleg Ivanov: Adaptive query optimization in PostgreSQL](https://www.pgcon.org/2017/schedule/attachments/450_pgcon2017_aqo.pdf)
 - [Oleg Ivanov, Yerzhaisang Taskali: Adaptive query optimization in PostgreSQL](https://archive.fosdem.org/2021/schedule/event/postgres_query_optimization/)
 
-These links about AQO in Russia:
+AQO links (Russian version):
 - [Павел Толмачев: AQO — адаптивная оптимизация запросов в PostgreSQL](https://habr.com/ru/companies/postgrespro/articles/508766/)
 - [Олег Иванов: Применение машинного обучения для увеличения производительности PostgreSQL](https://habr.com/ru/companies/postgrespro/articles/273199/)
 - [Олег Иванов: Адаптивная оптимизация запросов](https://postgrespro.ru/media/2016/11/25/olegivanov.pdf)
@@ -36,19 +36,19 @@ These links about AQO in Russia:
 # Database about students
 ## Database description
 Database consists of four tables:
-Students table contains inforrmation about students, particularly their name, gender, learning group.
-Teachers table contains information about teachers (name and gender) who learn courses.
-Course table describs courses that have teachers and students. It contains the identificator of teacher and name of course too.
-Scores table collects information about how students learn on corses: gather information about marks and analytics about essay (number of letters) and do students have an preparation course before taking exam.
-There is a schema of database:
+Students' table contains information about students - names, genders, learning groups.
+Teachers' table contains information about teachers (name and gender) who teach the courses.
+Course table describes courses. It contains the ID information of one specific teacher their assigned course.
+Scores table collects information about students course grades/marks and analytics for essays (word count) and whether students have a course before an exam.
+See the database schema link bellow:
 <img alt="Database schema about students" src="some pictures/database_schema.png" />
 
-To have some more experience with it you can restore dump_students.sql dump using command:
+Note: you can restore dump_students.sql dump using command:
 ```
 pg_dump -d postgres > 'dump_students2.sql'
 ```
 You can generate own data for experiments using database_students.sql script.
-Note, if you run it as it is ypu generate 100 teachers, 10 courses, 3000 students and 15000 data for score table. You can use below commands to generate more data (instead of N you set how many data you want to generate):
+Note, if you run it you can generate 100 teachers, 10 courses, 3000 students and 15000 data for score table. You can use below commands to generate more data (instead of N you set how many data you want to generate):
 
 To generate students:
 ```
