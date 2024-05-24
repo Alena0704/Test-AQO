@@ -189,8 +189,6 @@ with sns.axes_style("white"):
 
 All script analysis is in database_analyzes.ipynb
 
-## Interesting query issue
-
 # AQO tests on JOB database
 
 ## How to prepare database
