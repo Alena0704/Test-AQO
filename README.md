@@ -2,12 +2,14 @@
 
 # Content of repository:
 0. [What AQO is](#what-AQO-is)
+   
    0. [Description and you can find it](#description-and-you-can-find-it)
    1. [Extra links about AQO](#extra-links-about-aqo)
-1. [Database about students](#database-about-students)
+2. [Database about students](#database-about-students)
     0. [Database description](#database-description)
     1. [Analyze data from database](#analyze-data-from-database)
-2. [AQO tests on JOB database](#aqo-tests-on-JOB-database)
+4. [AQO tests on JOB database](#aqo-tests-on-JOB-database)
+   
     0. [How to prepare database](#how-to-prepare-database)
     1. [Extra links about AQO](#extra-links-about-AQO)
     2. [How to run JOB test](#how-to-run-JOB-to-test-AQO)
