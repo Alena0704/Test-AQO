@@ -491,4 +491,4 @@ fig3.update_traces(texttemplate='%{text:.2s}', textposition='top center')
 upload_pics(fig3, '{}/{}_folder{}'.format(main_path, 'learn',cycle_test), 'Stack')
 fig3.show()
 ```
-The script file with all code to analyze AQO functionality is located [here](analyze AQO final version.ipynb).
+The script file with all code to analyze AQO functionality is located [here]([analyze AQO final version.ipynb](https://github.com/Alena0704/Test-AQO/blob/main/analyze%20AQO%20final%20version.ipynb)).
