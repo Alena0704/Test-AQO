@@ -7,7 +7,6 @@
 1. [Database about students](#database-about-students)
     0. [Database description](#database-description)
     1. [Analyze data from database](#analyze-data-from-database)
-    2. [Interesting query issue](#interesting-query-issue)
 2. [AQO tests on JOB database](#aqo-tests-on-JOB-database)
     0. [How to prepare database](#how-to-prepare-database)
     1. [Extra links about AQO](#extra-links-about-AQO)
@@ -188,8 +187,6 @@ with sns.axes_style("white"):
 ```
 
 All script analysis is in database_analyzes.ipynb
-
-## Interesting query issue
 
 # AQO tests on JOB database
 
@@ -492,3 +489,4 @@ fig3.update_traces(texttemplate='%{text:.2s}', textposition='top center')
 upload_pics(fig3, '{}/{}_folder{}'.format(main_path, 'learn',cycle_test), 'Stack')
 fig3.show()
 ```
+The script file with all code to analyze AQO functionality is located [here](analyze AQO final version.ipynb).
